@@ -17,7 +17,7 @@ isotope_15N = "15N"
 isotope_18O = "18O"
 base_dir = "E:/project/isotopes image file/"
 years = list(range(1990, 2024))          # image time range
-output_dir = r"E:\project后\SIAR\annual tables"
+output_dir = r"E:\project\SIAR\annual tables"
 
 # File name template
 file_15N_template = os.path.join(base_dir, isotope_15N, f"China_{isotope_15N}_{{}}_0.25deg.tif")
