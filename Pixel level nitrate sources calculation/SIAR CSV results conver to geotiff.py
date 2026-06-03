@@ -16,7 +16,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # ========== Import & export setting ==========
-csv_path = r"E:\project\SIAR\results\siar model results.csv"
+csv_path = r"E:\project\SIAR\results\siar model results_1990.csv" # example csv
 template_raster_15N = "E:/project/isotopes image/15N_mean_19902023.tif" # Provide an existing 15N annual average image to determine the image size.
 output_dir = "E:/project/SIAR/Nitrate sources contribution image"
 os.makedirs(output_dir, exist_ok=True)
