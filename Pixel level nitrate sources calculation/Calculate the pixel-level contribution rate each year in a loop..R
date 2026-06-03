@@ -3,34 +3,34 @@ library(foreach)
 library(doParallel)
 library(doSNOW) 
 
-# 设置工作路径
-setwd("E:/博后/中国沿海硝酸盐同位素/SIAR")
+# Set working path
+setwd("E:/project/SIAR/")
 
-# 输入目录（存放每年 delta_1990.csv 等文件）
+# import file（Stores csv files for each year.）
 input_dir <- "annual_tables"
-# 输出目录
+# export file
 output_dir <- "annual_results"
 if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 
-# 读取源数据（固定）
+# Reading background data of potential nitrate source isotopes
 sources <- read.csv("source.csv", header = TRUE)
 
-# 获取所有年份文件列表
+# Get a list of files for all years
 files <- list.files(input_dir, pattern = "^delta_[0-9]{4}\\.csv$", full.names = TRUE)
 
-# 注册并行后端（全局注册一次，提高效率）
+# Register a parallel backend (register globally once to improve efficiency).
 cl <- makeCluster(16) 
 registerDoSNOW(cl)
 
-# 循环处理每一年
+# Processing in cycles every year
 for (file in files) {
-  # 提取年份
+  # Extraction Year
   year <- gsub("^.*delta_([0-9]{4})\\.csv$", "\\1", basename(file))
   cat("Processing year:", year, "\n")
   
-  # 读取数据
+  # read data
   data_1 <- read.csv(file, header = TRUE)
-  # 确保列顺序和名称：group, delta15N, delta18O
+  # Ensure column order and names: group, delta15N, delta18O
   names(data_1) <- c("group", "delta15N", "delta18O")
   
   n_row_1 <- nrow(data_1)
@@ -39,32 +39,32 @@ for (file in files) {
     next
   }
   
-  # 进度条设置
+  # Progress bar settings
   pb <- txtProgressBar(max = n_row_1, style = 3)
   progress <- function(n) setTxtProgressBar(pb, n)
   opts <- list(progress = progress)
   
-  # 并行计算每个样本的源贡献
+  # Parallel computation of the source contribution for each sample
   result <- foreach::foreach(i = 1:n_row_1, .combine = rbind, 
                              .packages = c('siar'), 
                              .options.snow = opts) %dopar% {
                                row_data <- data_1[i, c("group", "delta15N", "delta18O")]
                                model1 <- siarsolomcmcv4(row_data, sources)
-                               colMeans(model1$output[, 1:4])  # 返回四个源的均值
+                               colMeans(model1$output[, 1:4])  # Return the mean of the four sources
                              }
   
   close(pb)
   
-  # 转换为数据框并添加列名
+  # Convert to a data frame and add column names
   mat1 <- as.data.frame(result)
   names(mat1) <- c("IF", "MS", "SN", "AD")
   
-  # 保存结果
-  out_file <- file.path(output_dir, paste0("singlepoint_", year, ".csv"))
+  # Save results
+  out_file <- file.path(output_dir, paste0("siar model results_", year, ".csv"))
   write.csv(mat1, out_file, row.names = FALSE)
   cat("  Saved:", out_file, "\n")
 }
 
-# 停止集群
+# Stop the cluster
 stopCluster(cl)
 cat("All years processed.\n")
